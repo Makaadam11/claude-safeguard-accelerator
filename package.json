@@ -1,0 +1,52 @@
+{
+  "name": "claude-safeguard-accelerator",
+  "version": "0.1.0",
+  "description": "Zero-config safeguarded allow-list for Claude Code. Fewer prompts, never unsafe.",
+  "keywords": [
+    "claude-code",
+    "claude",
+    "anthropic",
+    "ai-agents",
+    "cli",
+    "developer-tools",
+    "security",
+    "permissions",
+    "hooks"
+  ],
+  "homepage": "https://github.com/your-org/claude-safeguard-accelerator",
+  "bugs": {
+    "url": "https://github.com/your-org/claude-safeguard-accelerator/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-org/claude-safeguard-accelerator.git"
+  },
+  "license": "MIT",
+  "author": "",
+  "type": "commonjs",
+  "main": "src/index.js",
+  "bin": {
+    "csa": "bin/csa.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "start": "node bin/csa.js",
+    "lint": "node -e \"console.log('no lint configured')\""
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "jsonc-parser": "^3.3.1",
+    "picocolors": "^1.1.1",
+    "shell-quote": "^1.8.2"
+  },
+  "devDependencies": {}
+}

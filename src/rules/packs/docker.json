@@ -1,0 +1,18 @@
+{
+  "name": "docker",
+  "description": "Safe read-only docker/compose commands. Opt-in.",
+  "allow": [
+    "Bash(docker --version)",
+    "Bash(docker ps)",
+    "Bash(docker ps:*)",
+    "Bash(docker images)",
+    "Bash(docker images:*)",
+    "Bash(docker inspect:*)",
+    "Bash(docker logs:*)",
+    "Bash(docker compose config)",
+    "Bash(docker compose ps)",
+    "Bash(docker compose logs:*)",
+    "Bash(docker-compose ps)",
+    "Bash(docker-compose config)"
+  ]
+}
