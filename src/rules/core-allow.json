@@ -6,6 +6,12 @@
     "Bash(ls:*)",
     "Bash(pwd)",
     "Bash(cd:*)",
+    "Bash(mkdir:*)",
+    "Bash(touch:*)",
+    "Bash(basename:*)",
+    "Bash(dirname:*)",
+    "Bash(realpath:*)",
+    "Bash(readlink:*)",
     "Bash(cat:*)",
     "Bash(head:*)",
     "Bash(tail:*)",
@@ -42,7 +48,12 @@
     "Bash(awk:*)",
     "Bash(sed -n:*)",
     "Read(**)",
+    "Write(**)",
+    "Edit(**)",
+    "NotebookEdit(**)",
     "Grep(**)",
-    "Glob(**)"
+    "Glob(**)",
+    "TodoWrite",
+    "Task"
   ]
 }
