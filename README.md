@@ -340,6 +340,17 @@ No runtime deps on Claude Code itself — CSA only reads/writes its settings fil
 - Adversarial fixtures for the hook: obfuscated `rm`, `$(echo rm) -rf`,
   base64-piped-to-bash, `git push` with newline-embedded flags, etc.
 
+### End-to-end test project
+
+A dedicated sandbox repo is used for manual and automated end-to-end runs of CSA
+against a realistic project layout:
+
+- **csa-test-project**: https://github.com/Makaadam11/csa-test-project
+
+It contains curated payloads (safe + dangerous command samples) used to verify
+that `csa enable` produces the expected allow/deny/hook-block behavior in a
+fresh Claude Code session.
+
 ---
 
 ## Non-goals

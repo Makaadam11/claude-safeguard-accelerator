@@ -13,16 +13,19 @@
     "permissions",
     "hooks"
   ],
-  "homepage": "https://github.com/your-org/claude-safeguard-accelerator",
+  "homepage": "https://github.com/Makaadam11/claude-safeguard-accelerator",
   "bugs": {
-    "url": "https://github.com/your-org/claude-safeguard-accelerator/issues"
+    "url": "https://github.com/Makaadam11/claude-safeguard-accelerator/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/your-org/claude-safeguard-accelerator.git"
+    "url": "git+https://github.com/Makaadam11/claude-safeguard-accelerator.git"
   },
   "license": "MIT",
-  "author": "",
+  "author": "Makaadam11",
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "commonjs",
   "main": "src/index.js",
   "bin": {
