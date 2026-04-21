@@ -12,6 +12,14 @@ you cleanly `disable` to restore the original state.
 
 ---
 
+## Status
+
+Early preview (`0.x`). API and rule-pack format may change between minor versions.
+Bug reports very welcome — open an issue at
+https://github.com/Makaadam11/claude-safeguard-accelerator/issues.
+
+---
+
 ## Goals
 
 | Goal                           | Why                                                              |
