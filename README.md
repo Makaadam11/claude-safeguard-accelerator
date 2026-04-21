@@ -1,5 +1,11 @@
 # Claude Safeguard Accelerator (CSA)
 
+[![npm version](https://img.shields.io/npm/v/claude-safeguard-accelerator.svg)](https://www.npmjs.com/package/claude-safeguard-accelerator)
+[![npm downloads](https://img.shields.io/npm/dm/claude-safeguard-accelerator.svg)](https://www.npmjs.com/package/claude-safeguard-accelerator)
+[![node](https://img.shields.io/node/v/claude-safeguard-accelerator.svg)](https://nodejs.org)
+[![license](https://img.shields.io/npm/l/claude-safeguard-accelerator.svg)](./LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/Makaadam11/claude-safeguard-accelerator.svg?style=social)](https://github.com/Makaadam11/claude-safeguard-accelerator)
+
 A zero-config Node module that accelerates your Claude Code workflow by
 auto-approving a **curated allow-list** of safe commands while **hard-denying
 dangerous ones** — drastically reducing permission prompts without opening
