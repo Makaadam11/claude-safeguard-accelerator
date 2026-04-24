@@ -41,7 +41,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node --test test/*.test.js",
+    "test": "node test/run.js",
     "start": "node bin/csa.js",
     "lint": "node -e \"console.log('no lint configured')\""
   },
