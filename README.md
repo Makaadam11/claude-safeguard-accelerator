@@ -215,14 +215,19 @@ if they pass the allow regex.
 **`pretool-guard.js` responsibilities:**
 
 1. Read the tool input from stdin (`{tool_name, tool_input}`).
-2. For `Bash`, tokenize with `shell-quote` and walk each command segment.
-3. Reject if any segment matches a compiled deny-regex (`rm -rf /`, pipe-to-sh,
-   secret paths, fork-bombs, base64-encoded payloads over threshold, etc.).
-4. Reject if the command contains `$()`/backticks wrapping a denied binary.
-5. Reject writes/reads targeting secrets (`.env`, `id_rsa`, `.aws/credentials`,
-   `.ssh/*`, `**/*.pem`).
-6. On reject, exit `2` with a JSON reason on stderr — Claude surfaces this.
-7. Increment a counter in `~/.claude/csa/stats.json` (atomic write).
+2. For `Bash`, run the raw command string through a set of regex-based danger
+   patterns: `rm -rf` variants (including via `$(...)` substitution), pipe-to-shell,
+   sudo/su, `git push --force`, `--no-verify`, `git reset --hard`, `git clean -fd`,
+   `chmod 777`, `mkfs`, `dd of=/dev/...`, `shutdown`/`reboot`/`halt`, `npm publish`
+   (and auth variants), base64-piped-to-shell, fork bomb, cloud-CLI writes
+   (`aws`/`gcloud`/`az` non-read-only verbs), `kubectl` mutating verbs.
+3. For `Read`/`Write`/`Edit`/`NotebookEdit`, reject access to secret paths
+   (`.env`, `id_rsa`, `.aws/credentials`, `.ssh/*`, `*.pem`, `.netrc`, `.npmrc`).
+4. For `Write`/`Edit`/`NotebookEdit` only (Read is allowed), also reject targets
+   on system or shell-init paths (`/etc`, `/usr`, `/System`, `C:\Windows\`,
+   `~/.bashrc`, `~/.zshrc`, `~/.profile`, etc.).
+5. On reject, exit `2` with a reason on stderr — Claude surfaces this.
+6. Increment a counter in `~/.claude/csa/stats.json` (atomic write).
 
 Hook contract reference: https://docs.claude.com/en/docs/claude-code/hooks
 
@@ -331,7 +336,6 @@ claude-safeguard-accelerator/
 │   ├── stats/
 │   │   └── recorder.js
 │   └── util/
-│       ├── shell-parse.js         # wraps shell-quote + custom walker
 │       └── logger.js
 ├── test/
 │   ├── merge.test.js
@@ -344,7 +348,6 @@ claude-safeguard-accelerator/
 
 Dependencies (keep minimal):
 
-- `shell-quote` — safe tokenization
 - `commander` — CLI
 - `picocolors` — tty output (no chalk bloat)
 - `jsonc-parser` — Claude settings files allow comments

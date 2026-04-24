@@ -1,6 +1,6 @@
 {
   "name": "claude-safeguard-accelerator",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Zero-config safeguarded allow-list for Claude Code. Fewer prompts, never unsafe.",
   "keywords": [
     "claude-code",
@@ -48,8 +48,7 @@
   "dependencies": {
     "commander": "^12.1.0",
     "jsonc-parser": "^3.3.1",
-    "picocolors": "^1.1.1",
-    "shell-quote": "^1.8.2"
+    "picocolors": "^1.1.1"
   },
   "devDependencies": {}
 }

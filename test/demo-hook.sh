@@ -95,12 +95,16 @@ probe "fork bomb"                       "$(bash_payload ':(){ :|:& };:')"       
 
 echo
 echo "[file tools — read/write/edit]"
-probe "Read /tmp/foo.txt"               "$(file_payload Read /tmp/foo.txt)"                         allow
-probe "Read ~/.env"                     "$(file_payload Read /home/me/app/.env)"                    block
-probe "Read ~/.ssh/id_rsa"              "$(file_payload Read /home/me/.ssh/id_rsa)"                 block
-probe "Read .aws/credentials"           "$(file_payload Read /home/me/.aws/credentials)"            block
-probe "Write to .env"                   "$(file_payload Write /home/me/app/.env)"                   block
-probe "Edit normal file"                "$(file_payload Edit /home/me/app/src/index.js)"            allow
+# Use paths that don't collide with MSYS/Git-Bash translation on Windows
+# (e.g. /home/... becomes C:/Program Files/Git/home/... in Git Bash).
+probe "Read ./README.md"                "$(file_payload Read ./README.md)"                          allow
+probe "Read .env (secret)"              "$(file_payload Read ./app/.env)"                           block
+probe "Read id_rsa"                     "$(file_payload Read ./.ssh/id_rsa)"                        block
+probe "Read .aws/credentials"           "$(file_payload Read ./.aws/credentials)"                   block
+probe "Write to .env"                   "$(file_payload Write ./app/.env)"                          block
+probe "Write to /etc/hosts (system)"    "$(file_payload Write /etc/hosts)"                          block
+probe "Edit ~/.bashrc (shell init)"     "$(file_payload Edit ./.bashrc)"                            block
+probe "Edit normal project file"        "$(file_payload Edit ./src/index.js)"                       allow
 
 echo
 echo "─────────────────────────────────────────────────────────────────────────────"

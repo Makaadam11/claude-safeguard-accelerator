@@ -49,16 +49,16 @@ test('node pack no longer auto-approves arbitrary --save-dev installs', () => {
 
 test('core-deny drops shell-expanded pseudo-patterns', () => {
   const { deny } = composeRules({ packs: [], includeUser: false });
+  // Shell expands these BEFORE the permissions layer sees them, so literal-pattern
+  // deny entries can never match. The PreToolUse hook is what actually blocks them.
   const misleading = [
     'Bash(rm -rf $HOME*)',
     'Bash(rm -rf ~)',
     'Bash(rm -rf ~/*)',
     'Bash(rm -rf ..:*)',
     'Bash(rm -rf ../*)',
-    'Bash(rm -rf /*)',
   ];
   for (const pat of misleading) {
-    if (pat === 'Bash(rm -rf /*)') continue; // this stays — it's a plausible literal
     assert.ok(!deny.includes(pat), `core-deny should not contain misleading pattern ${pat}`);
   }
 });
