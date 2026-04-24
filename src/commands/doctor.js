@@ -1,4 +1,5 @@
 const fs = require('fs');
+const { execSync } = require('child_process');
 const { globalSettingsPath, localSettingsPath } = require('../settings/paths');
 const { readSettings } = require('../settings/read');
 const { installedHookPath } = require('../hooks/install');
@@ -17,6 +18,13 @@ async function run() {
 
   const nodeOk = Number(process.versions.node.split('.')[0]) >= 18;
   ok &= check('node >= 18', nodeOk, `(current: ${process.versions.node})`);
+
+  try {
+    const claudeVer = execSync('claude --version', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    check('claude CLI present', true, claudeVer);
+  } catch (_) {
+    log.warn('claude CLI not found on PATH; hook wiring cannot be verified against a live Claude Code install');
+  }
 
   const hookPath = installedHookPath();
   const hookExists = fs.existsSync(hookPath);
@@ -37,7 +45,6 @@ async function run() {
       check(`${label} settings valid JSON`, true, p);
       if (csaHook) {
         const cmd = csaHook.hooks && csaHook.hooks[0] && csaHook.hooks[0].command;
-        const refsScript = cmd && cmd.includes(hookPath.replace(/\\/g, '\\\\').slice(0, 10));
         check(`${label} CSA hook wired`, Boolean(cmd), cmd || '(missing command)');
         const reachable = cmd && hookExists;
         ok &= check(`${label} hook reachable`, Boolean(reachable));

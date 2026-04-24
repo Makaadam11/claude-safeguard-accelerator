@@ -17,12 +17,24 @@ function parseScope(opts) {
 }
 
 function parsePacks(opts) {
-  if (!opts.pack) return [];
   const avail = availablePacks();
   const requested = opts.pack
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
+    ? opts.pack.split(',').map((s) => s.trim()).filter(Boolean)
+    : [];
+  const isExplicit = requested.length > 0;
+
+  // Default: include `git` unless user explicitly picked packs or passed --no-git.
+  if (!isExplicit && opts.git !== false) {
+    requested.push('git');
+  }
+
+  // --edits adds the `edits` pack (Write/Edit/NotebookEdit) and `git-write`
+  // (git add/commit/pull/checkout/switch/restore --staged).
+  if (opts.edits) {
+    if (!requested.includes('edits')) requested.push('edits');
+    if (!requested.includes('git-write')) requested.push('git-write');
+  }
+
   const unknown = requested.filter((p) => !avail.includes(p));
   if (unknown.length) {
     const err = new Error(
@@ -43,6 +55,7 @@ async function run(opts = {}) {
   log.header('Claude Safeguard Accelerator — enable');
   log.kv('scope', scope);
   log.kv('packs', packs.length ? packs.join(', ') : '(core only)');
+  if (opts.edits) log.kv('edits mode', 'ON (Write/Edit/NotebookEdit + git-write)');
   for (const t of targets) log.kv(`target:${t.scope}`, t.path);
 
   const backup = createBackup(targets);

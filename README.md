@@ -1,5 +1,6 @@
 # Claude Safeguard Accelerator (CSA)
 
+[![CI](https://github.com/Makaadam11/claude-safeguard-accelerator/actions/workflows/ci.yml/badge.svg)](https://github.com/Makaadam11/claude-safeguard-accelerator/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/claude-safeguard-accelerator.svg)](https://www.npmjs.com/package/claude-safeguard-accelerator)
 [![npm downloads](https://img.shields.io/npm/dm/claude-safeguard-accelerator.svg)](https://www.npmjs.com/package/claude-safeguard-accelerator)
 [![node](https://img.shields.io/node/v/claude-safeguard-accelerator.svg)](https://nodejs.org)
@@ -55,21 +56,43 @@ Node >= 18 required.
 ## CLI
 
 ```
-csa enable           Apply safeguards to global + project settings (backs up existing)
-csa enable --global  Apply only to ~/.claude/settings.json
-csa enable --local   Apply only to ./.claude/settings.local.json
-csa disable          Revert to the most recent backup; remove CSA hook
-csa status           Show whether CSA is active, version, backup path
-csa stats            Show per-rule counts: allowed, denied, hook-blocked
-csa list allow       Print the full allow-list
-csa list deny        Print the full deny-list
-csa list hooks       Print installed hooks
-csa diff             Show diff between current settings and pre-CSA backup
-csa update           Pull the latest rule-pack without losing your custom rules
-csa doctor           Validate settings files, hook script, node/claude versions
+csa enable              Apply safeguards to global + project settings (backs up existing).
+                        By default includes the `git` read-only pack.
+csa enable --global     Apply only to ~/.claude/settings.json
+csa enable --local      Apply only to ./.claude/settings.local.json
+csa enable --pack N     Use these packs INSTEAD of the git default (e.g. --pack node,python)
+csa enable --edits      Also auto-approve Write/Edit/NotebookEdit and mutating git commands
+                        (add/commit/pull/checkout). Secret & system paths stay blocked.
+csa enable --no-git     Skip the git pack that is enabled by default
+csa disable             Revert to the most recent backup; remove CSA hook
+csa status              Show whether CSA is active, version, backup path
+csa stats               Show hook-block counters (allow/deny counts are not currently tracked)
+csa list allow          Print the full allow-list
+csa list deny           Print the full deny-list
+csa list packs          Print available rule packs
+csa list hooks          Print installed hooks
+csa diff                Show diff between current settings and pre-CSA backup
+csa update              Check npm for a newer version and print the upgrade command
+csa doctor              Validate settings files, hook script, node/claude versions
 ```
 
 Exit codes: `0` success, `1` user error, `2` settings/file error, `3` validation failure.
+
+### Quick recipes
+
+```bash
+# Safe defaults (reads + git read-only). Recommended for first-time install.
+csa enable
+
+# Include node and python helpers, plus git read-only
+csa enable --pack node,python
+
+# Let Claude freely edit files and run mutating git (still blocks secrets/system paths)
+csa enable --edits
+
+# Minimal: only core safe shell commands, no git
+csa enable --no-git
+```
 
 ---
 
@@ -107,50 +130,61 @@ CSA merges, never overwrites, using these rules on the `permissions` object:
 - `allow[]`: union of existing + CSA allow-list, de-duplicated
 - `deny[]`: CSA deny-list **prepended** (deny always wins in Claude Code)
 - `ask[]`: left untouched
-- `defaultMode`: left untouched unless absent, then set to `"default"`
+- `defaultMode`: never touched
 - Other keys (`env`, `model`, `hooks`, etc.): preserved; only `hooks.PreToolUse`
-  gets a CSA entry appended with a `// csa` marker for clean removal
+  gets a CSA entry appended with a `__csa: "csa-managed"` marker for clean removal
 
 ### 4. Allow-list (excerpt)
 
-Read-only & informational commands that are genuinely safe:
+**Core** is strictly read-only / informational:
 
 ```jsonc
 "allow": [
-  "Bash(ls:*)", "Bash(pwd)", "Bash(cd:*)",
-  "Bash(cat:*)", "Bash(head:*)", "Bash(tail:*)", "Bash(wc:*)",
-  "Bash(git status)", "Bash(git diff:*)", "Bash(git log:*)",
-  "Bash(git branch:*)", "Bash(git show:*)", "Bash(git remote -v)",
-  "Bash(npm run test:*)", "Bash(npm run lint:*)", "Bash(npm run build)",
-  "Bash(npm ls:*)", "Bash(npm outdated)", "Bash(npm view:*)",
-  "Bash(node --version)", "Bash(which:*)", "Bash(echo:*)",
-  "Bash(jq:*)", "Bash(tree:*)", "Bash(find . -name:*)",
-  "Read(**)", "Grep(**)", "Glob(**)"
+  "Bash(ls:*)", "Bash(pwd)", "Bash(cat:*)", "Bash(head:*)", "Bash(tail:*)",
+  "Bash(wc:*)", "Bash(file:*)", "Bash(stat:*)", "Bash(du:*)", "Bash(df:*)",
+  "Bash(which:*)", "Bash(echo:*)", "Bash(jq:*)", "Bash(tree:*)",
+  "Bash(find . -name:*)", "Bash(diff:*)", "Bash(grep:*)",
+  "Read(**)", "Grep(**)", "Glob(**)", "TodoWrite", "Task"
 ]
 ```
 
-Full list: `csa list allow` (ships ~150 rules, grouped by category).
+**`git` pack** (default on): `git status/diff/log/show/branch/remote/fetch/...` — strictly read-only.
+
+**`node` / `python` / `docker` packs** (opt-in): version checks, test/lint runs, `npm ls`, `pip list`, `docker ps`, etc.
+
+**`edits` pack** (opt-in via `--edits`): `Write(**)`, `Edit(**)`, `NotebookEdit(**)` — the `PreToolUse` hook still blocks writes to secret paths (`.env`, `.ssh/`) and system paths (`/etc/`, `~/.bashrc`, `C:\Windows\...`).
+
+**`git-write` pack** (opt-in, auto-included by `--edits`): `git add/commit/pull/checkout/switch`.
+
+Full list: `csa list allow` (or `csa list packs` for pack names).
 
 ### 5. Deny-list (excerpt)
 
-Patterns that are **never** auto-approved and are blocked by the hook even if
-a user later adds them to `allow`:
+Patterns that are **never** auto-approved:
 
 ```jsonc
 "deny": [
-  "Bash(rm -rf:*)", "Bash(rm -fr:*)", "Bash(rm -r /:*)",
+  "Bash(rm -rf:*)", "Bash(rm -fr:*)", "Bash(rm -rf /)",
   "Bash(sudo:*)", "Bash(chmod 777:*)", "Bash(chown:*)",
   "Bash(git push --force:*)", "Bash(git push -f:*)",
   "Bash(git reset --hard:*)", "Bash(git clean -fd:*)",
   "Bash(git commit --no-verify:*)", "Bash(git push --no-verify:*)",
-  "Bash(curl * | sh)", "Bash(wget * | sh)", "Bash(curl * | bash)",
   "Bash(npm publish:*)", "Bash(npm login:*)",
   "Bash(aws:*)", "Bash(gcloud:*)", "Bash(kubectl delete:*)",
   "Bash(dd:*)", "Bash(mkfs:*)", "Bash(shutdown:*)", "Bash(reboot)",
-  "Read(**/.env)", "Read(**/.aws/credentials)", "Read(**/id_rsa*)",
+  "Read(**/.env)", "Read(**/.aws/credentials)", "Read(**/id_rsa)",
   "Write(**/.env)", "Edit(**/.env)"
 ]
 ```
+
+> **Heads-up on pattern matching.** Claude Code's `permissions` list is literal
+> pattern-matched, so the shell has already expanded `$HOME`, `~`, `..`, glob
+> `*`, command-substitution `$(...)`, and pipe chains by the time this layer
+> runs. That means a deny entry like `Bash(rm -rf $HOME*)` would *not* actually
+> fire on `rm -rf $HOME/foo`. This is exactly why CSA ships the `PreToolUse`
+> hook (§6) — it re-reads the full raw command string and blocks dangerous
+> variants the pattern layer misses (`rm -rf ~`, `rm -rf /home/me`,
+> `$(echo rm) -rf /`, base64-piped-to-shell, etc.).
 
 ### 6. PreToolUse hook — defense in depth
 
@@ -194,28 +228,28 @@ Hook contract reference: https://docs.claude.com/en/docs/claude-code/hooks
 
 ### 7. Stats
 
+`csa stats` reports everything the `PreToolUse` hook actually sees, which today
+is **hook blocks** (denied tool uses that the hook caught). Allow/deny counts
+from Claude Code's built-in permissions layer are *not* collected — that would
+require a `PostToolUse` hook and is on the roadmap, not in 0.x.
+
 ```
 $ csa stats
-CSA v1.0.3 — active since 2026-04-17
+Claude Safeguard Accelerator — stats
+  enabledAt    2026-04-17T15:30:14Z
 
-Scope          Allow hits  Deny hits  Hook blocks
-global         1,284       0           12
-project        402         0           3
+Allow hits  (total: 0)
+  (none)
 
-Top allowed (last 7d)
-  Bash(git status)     214
-  Bash(ls:*)           188
-  Read(**)             156
+Deny hits  (total: 0)
+  (none)
 
-Top hook blocks (last 7d)
-  Bash(rm -rf:*)        6   — "rm -rf node_modules/../.."
-  Bash(git push -f:*)   4
-  Read(**/.env)         2
-
-Settings files
-  ~/.claude/settings.json              (CSA-managed, last patched 2h ago)
-  ./.claude/settings.local.json        (CSA-managed, last patched 2h ago)
-  backup: ~/.claude/csa/backups/20260417-153014/
+Hook blocks  (total: 14)
+       6  Bash:rm-rf-root
+       4  Bash:force-push
+       2  Read:secret-path
+       1  Bash:pipe-to-shell
+       1  Write:system-path
 ```
 
 `stats.json` schema:
@@ -225,11 +259,11 @@ Settings files
   "version": 1,
   "enabledAt": "2026-04-17T15:30:14Z",
   "counts": {
-    "allow":     { "Bash(git status)": 214, ... },
-    "deny":      { ... },
-    "hookBlock": { "Bash(rm -rf:*)": 6, ... }
+    "allow":     {},                            // reserved for future PostToolUse hook
+    "deny":      {},                            // reserved for future PostToolUse hook
+    "hookBlock": { "Bash:rm-rf-root": 6, ... }
   },
-  "recent": [ { "ts": "...", "tool": "Bash", "cmd": "...", "verdict": "block" } ]  // ring buffer, 500 entries
+  "recent": [ { "ts": "...", "verdict": "hookBlock", "key": "..." } ]  // ring buffer, 500 entries
 }
 ```
 
@@ -241,15 +275,20 @@ Rules live in versioned JSON files so they can be updated independently of the C
 
 ```
 src/rules/
-  core-allow.json         # always-on, curated safe commands
-  core-deny.json          # always-on, non-negotiable dangerous patterns
-  node.json               # npm/pnpm/yarn helpers
-  python.json             # pip/uv/poetry helpers
-  git.json                # read-only git commands
-  docker.json             # opt-in (--pack docker)
+  core-allow.json              # always-on, safe read-only commands
+  core-deny.json               # always-on, non-negotiable dangerous patterns
+  packs/git.json               # read-only git (default on; disable with --no-git)
+  packs/git-write.json         # mutating git (opt-in; auto-included by --edits)
+  packs/node.json              # npm/pnpm/yarn helpers (opt-in)
+  packs/python.json            # pip/uv/poetry helpers (opt-in)
+  packs/docker.json            # docker read-only (opt-in)
+  packs/edits.json             # Write/Edit/NotebookEdit (opt-in; use --edits)
 ```
 
-`csa enable --pack node,python` composes packs. Users extend with:
+`csa enable --pack node,python` composes packs (replaces the default git pack).
+`csa enable --edits` adds `edits` + `git-write` on top of whatever else is selected.
+
+Users extend with:
 
 ```
 ~/.claude/csa/rules.user.json
@@ -372,6 +411,23 @@ fresh Claude Code session.
 - Replacing Claude Code's own permission prompts for genuinely ambiguous actions.
 - Scanning file contents for secrets (that's a different tool).
 - Managing MCP server permissions (future: `csa enable --mcp`).
+
+---
+
+## Manual uninstall (if you skipped `csa disable`)
+
+If you removed the package without running `csa disable` first, CLI is gone but
+the hook entry still sits in your settings. Clean it up manually:
+
+1. Delete the CSA state directory:
+   - macOS / Linux: `rm -rf ~/.claude/csa`
+   - Windows (PowerShell): `Remove-Item -Recurse -Force $HOME\.claude\csa`
+2. In `~/.claude/settings.json` (and `./.claude/settings.local.json` if present),
+   remove the entry under `hooks.PreToolUse` whose marker is
+   `"__csa": "csa-managed"`. Leave any other `PreToolUse` entries untouched.
+3. Optional: delete the `allow` / `deny` rules you recognize from `csa list allow`
+   and `csa list deny`. You can also just restore from
+   `~/.claude/csa/backups/<timestamp>/` if you kept that dir.
 
 ---
 

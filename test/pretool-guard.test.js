@@ -137,3 +137,49 @@ test('empty stdin exits cleanly', () => {
   const r = run({});
   assert.equal(r.status, 0);
 });
+
+test('blocks Write to /etc/hosts', () => {
+  const r = run({ tool_name: 'Write', tool_input: { file_path: '/etc/hosts', content: 'x' } });
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /system/i);
+});
+
+test('blocks Edit of ~/.bashrc', () => {
+  const r = run({ tool_name: 'Edit', tool_input: { file_path: '/home/me/.bashrc' } });
+  assert.equal(r.status, 2);
+});
+
+test('blocks Write to C:\\\\Windows\\\\system32\\\\drivers\\\\etc\\\\hosts', () => {
+  const r = run({ tool_name: 'Write', tool_input: { file_path: 'C:\\Windows\\system32\\drivers\\etc\\hosts', content: 'x' } });
+  assert.equal(r.status, 2);
+});
+
+test('blocks Edit of ~/.zshrc', () => {
+  const r = run({ tool_name: 'Edit', tool_input: { file_path: '/Users/me/.zshrc' } });
+  assert.equal(r.status, 2);
+});
+
+test('allows Read of /etc/hosts (system paths only block writes)', () => {
+  const r = run({ tool_name: 'Read', tool_input: { file_path: '/etc/hosts' } });
+  assert.equal(r.status, 0);
+});
+
+test('allows Write to a normal project file', () => {
+  const r = run({ tool_name: 'Write', tool_input: { file_path: '/home/me/project/src/app.js', content: 'x' } });
+  assert.equal(r.status, 0);
+});
+
+test('blocks rm -rf /home/me (shell-expanded $HOME)', () => {
+  const r = run(bash('rm -rf /home/me'));
+  assert.equal(r.status, 2);
+});
+
+test('blocks rm -rf ~ via $HOME literal', () => {
+  const r = run(bash('rm -rf $HOME'));
+  assert.equal(r.status, 2);
+});
+
+test('blocks $(echo rm) -rf /', () => {
+  const r = run(bash('$(echo rm) -rf /'));
+  assert.equal(r.status, 2);
+});

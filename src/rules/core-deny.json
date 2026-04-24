@@ -1,16 +1,11 @@
 {
   "name": "core-deny",
-  "description": "Always-denied patterns. Cannot be overridden by user allow rules.",
+  "description": "Always-denied patterns. Note: Claude Code's permissions are literal-pattern based (shell expansion like $HOME or ~ has already happened by the time this layer runs), so the PreToolUse hook is the authoritative guard for dangerous rm -rf variants. Patterns here are defense-in-depth for literal command strings.",
   "deny": [
     "Bash(rm -rf:*)",
     "Bash(rm -fr:*)",
     "Bash(rm -rf /)",
     "Bash(rm -rf /*)",
-    "Bash(rm -rf ~)",
-    "Bash(rm -rf ~/*)",
-    "Bash(rm -rf $HOME*)",
-    "Bash(rm -rf ..:*)",
-    "Bash(rm -rf ../*)",
     "Bash(sudo:*)",
     "Bash(su:*)",
     "Bash(doas:*)",

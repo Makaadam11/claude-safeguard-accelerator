@@ -24,7 +24,6 @@
     "Bash(npm test)",
     "Bash(npm test:*)",
     "Bash(npm install)",
-    "Bash(npm install --save-dev:*)",
     "Bash(npm ci)",
     "Bash(pnpm --version)",
     "Bash(pnpm ls:*)",

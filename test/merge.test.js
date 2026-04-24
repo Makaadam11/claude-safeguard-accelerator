@@ -69,3 +69,14 @@ test('stripCsa removes empty hooks object', () => {
   const out = stripCsa(existing);
   assert.equal(out.hooks, undefined);
 });
+
+test('mergePermissions never sets defaultMode', () => {
+  const { permissions } = mergePermissions({}, { allow: ['Bash(ls)'], deny: [] });
+  assert.equal(Object.prototype.hasOwnProperty.call(permissions, 'defaultMode'), false);
+});
+
+test('mergePermissions preserves existing defaultMode untouched', () => {
+  const existing = { defaultMode: 'acceptEdits' };
+  const { permissions } = mergePermissions(existing, { allow: [], deny: [] });
+  assert.equal(permissions.defaultMode, 'acceptEdits');
+});

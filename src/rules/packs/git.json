@@ -1,6 +1,6 @@
 {
   "name": "git",
-  "description": "Read-only git commands.",
+  "description": "Read-only git commands. Auto-included by default (override with --pack to pick specific packs).",
   "allow": [
     "Bash(git status)",
     "Bash(git status:*)",
@@ -30,13 +30,6 @@
     "Bash(git tag -l:*)",
     "Bash(git describe:*)",
     "Bash(git fetch)",
-    "Bash(git fetch:*)",
-    "Bash(git pull)",
-    "Bash(git pull --ff-only:*)",
-    "Bash(git add:*)",
-    "Bash(git commit -m:*)",
-    "Bash(git checkout:*)",
-    "Bash(git switch:*)",
-    "Bash(git restore --staged:*)"
+    "Bash(git fetch:*)"
   ]
 }

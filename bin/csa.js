@@ -27,7 +27,9 @@ program
   .description('Apply safeguards to global and/or local Claude Code settings.')
   .option('--global', 'apply to ~/.claude/settings.json only')
   .option('--local', 'apply to ./.claude/settings.local.json only')
-  .option('--pack <names>', 'comma-separated rule packs (e.g. node,python,git)')
+  .option('--pack <names>', 'comma-separated rule packs (e.g. node,python,docker). When set, replaces the default git pack.')
+  .option('--edits', 'also auto-approve Write/Edit/NotebookEdit and mutating git commands (add/commit/pull/checkout). Secret and system paths stay blocked.')
+  .option('--no-git', 'skip the git pack that is enabled by default')
   .action(handle((opts) => require('../src/commands/enable').run(opts)));
 
 program

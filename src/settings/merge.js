@@ -27,7 +27,6 @@ function mergePermissions(existing = {}, rules = {}) {
 
   const next = { ...existing, allow, deny };
   if (existingAsk.length > 0) next.ask = existingAsk;
-  if (existing.defaultMode == null) next.defaultMode = 'default';
   return { permissions: next, droppedAllow };
 }
 

@@ -1,0 +1,9 @@
+{
+  "name": "edits",
+  "description": "Opt-in: auto-approve Write / Edit / NotebookEdit. Secret paths and system paths (/etc, ~/.bashrc, Windows\\System32, etc.) remain blocked by the PreToolUse hook regardless of this pack. Enable with `csa enable --edits`.",
+  "allow": [
+    "Write(**)",
+    "Edit(**)",
+    "NotebookEdit(**)"
+  ]
+}

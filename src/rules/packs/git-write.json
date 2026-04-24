@@ -1,0 +1,13 @@
+{
+  "name": "git-write",
+  "description": "Opt-in: mutating git commands (add/commit/pull/checkout/switch/restore --staged). Can lose uncommitted work on checkout; use with care. Enable with `csa enable --edits` or `--pack git-write`.",
+  "allow": [
+    "Bash(git pull)",
+    "Bash(git pull --ff-only:*)",
+    "Bash(git add:*)",
+    "Bash(git commit -m:*)",
+    "Bash(git checkout:*)",
+    "Bash(git switch:*)",
+    "Bash(git restore --staged:*)"
+  ]
+}

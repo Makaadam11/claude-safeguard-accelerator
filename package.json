@@ -1,6 +1,6 @@
 {
   "name": "claude-safeguard-accelerator",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Zero-config safeguarded allow-list for Claude Code. Fewer prompts, never unsafe.",
   "keywords": [
     "claude-code",

@@ -45,6 +45,18 @@ const DANGER_PATTERNS = [
     },
   },
   {
+    id: 'rm-obfuscated',
+    test: (cmd) => {
+      // rm wrapped in command substitution ($(...) or `...`), combined with -rf somewhere.
+      const rmInSubst = /\$\([^)]*\brm\b[^)]*\)|`[^`]*\brm\b[^`]*`/.test(cmd);
+      const hasRF = /-[a-zA-Z]*r[a-zA-Z]*f[a-zA-Z]*\b/.test(cmd);
+      if (rmInSubst && hasRF) {
+        return 'Obfuscated rm via command substitution with recursive/force flag.';
+      }
+      return null;
+    },
+  },
+  {
     id: 'pipe-to-shell',
     test: (cmd) =>
       /\b(curl|wget|fetch)\b[^|]*\|\s*(sh|bash|zsh|ksh|dash|fish)(\s|$)/.test(cmd)
@@ -150,26 +162,56 @@ const DANGER_PATTERNS = [
   },
 ];
 
+// After path normalization (\ -> /), patterns only need to match forward slashes.
 const SECRET_PATH_PATTERNS = [
-  /\.env(\.|$)/,
-  /\.env$/,
-  /\.aws[\/\\]credentials/,
-  /\.aws[\/\\]config/,
-  /\.ssh[\/\\]/,
-  /[\/\\]id_rsa(\.|$)/,
-  /[\/\\]id_ed25519(\.|$)/,
-  /[\/\\]id_ecdsa(\.|$)/,
+  /(^|\/)\.env(\.|$)/,
+  /(^|\/)\.env$/,
+  /\.aws\/credentials/,
+  /\.aws\/config/,
+  /(^|\/)\.ssh\//,
+  /\/id_rsa(\.|$)/,
+  /\/id_ed25519(\.|$)/,
+  /\/id_ecdsa(\.|$)/,
   /\.pem$/,
   /\.key$/,
-  /\.netrc$/,
-  /\.npmrc$/,
-  /\.pypirc$/,
+  /(^|\/)\.netrc$/,
+  /(^|\/)\.npmrc$/,
+  /(^|\/)\.pypirc$/,
 ];
 
+// Write/Edit targets that would compromise the system or shell init.
+// Read of these is fine; only block mutations.
+const SYSTEM_PATH_PATTERNS = [
+  /^\/etc\//i,
+  /^\/usr\//i,
+  /^\/System\//,
+  /^\/Library\/(LaunchDaemons|LaunchAgents)\//,
+  /^[a-z]:\/Windows\//i,
+  /^[a-z]:\/Program Files( \(x86\))?\//i,
+  /(^|\/)\.bashrc$/,
+  /(^|\/)\.zshrc$/,
+  /(^|\/)\.profile$/,
+  /(^|\/)\.bash_profile$/,
+  /(^|\/)\.zprofile$/,
+  /(^|\/)\.bash_logout$/,
+  /(^|\/)\.zshenv$/,
+];
+
+function normPath(p) {
+  if (typeof p !== 'string') return '';
+  return p.replace(/\\/g, '/');
+}
+
 function isSecretPath(p) {
-  if (typeof p !== 'string') return false;
-  const norm = p.replace(/\\/g, '/');
+  const norm = normPath(p);
+  if (!norm) return false;
   return SECRET_PATH_PATTERNS.some((r) => r.test(norm));
+}
+
+function isSystemPath(p) {
+  const norm = normPath(p);
+  if (!norm) return false;
+  return SYSTEM_PATH_PATTERNS.some((r) => r.test(norm));
 }
 
 // --- stdin helpers --------------------------------------------------------------
@@ -245,6 +287,13 @@ function evaluate(payload) {
         decision: 'block',
         reason: `[CSA] Access to secret-like path is blocked: ${fp}`,
         key: `${toolName}:secret-path`,
+      };
+    }
+    if (toolName !== 'Read' && isSystemPath(fp)) {
+      return {
+        decision: 'block',
+        reason: `[CSA] Write/Edit to system or shell-init path is blocked: ${fp}`,
+        key: `${toolName}:system-path`,
       };
     }
     return { decision: 'allow' };
